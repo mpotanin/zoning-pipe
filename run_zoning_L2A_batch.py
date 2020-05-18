@@ -4,7 +4,6 @@ from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
 from collections import namedtuple
-import matplotlib.pyplot as plt
 import re
 import csv
 import argparse
