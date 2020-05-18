@@ -19,7 +19,7 @@ def run_zoning (vector_file, proc_fields_folder, tiles_folder, output_folder, zo
         fid_str = str(feat.GetField('fid'))
         print(fid_str)
         zoning_cmd = (zoning_base_cmd + ' -o_geojson ' + 
-                        os.path.join(output_folder,fid_str + '.geojson '))
+                        os.path.join(output_folder,fid_str + '.shp '))
         zoning_cmd += '-v ' + proc_fields_folder + '/' + fid_str + '/field_border.shp '
         zoning_cmd += '-sid \"'
         for i in range(1,7):
@@ -28,6 +28,7 @@ def run_zoning (vector_file, proc_fields_folder, tiles_folder, output_folder, zo
                 zoning_cmd+=os.path.join(tiles_folder,ndvi_date+'_ndvi.tiles') + ','
         
         zoning_cmd=zoning_cmd[:-1] + '\"'
+        #print(zoning_cmd)
         os.system(zoning_cmd)
 
 

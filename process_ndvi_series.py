@@ -6,7 +6,9 @@ from osgeo import osr
 from collections import namedtuple
 import matplotlib.pyplot as plt
 import re
+import csv
 import argparse
+from common_utils import vector_operations as vop
 
 
 """
@@ -44,24 +46,44 @@ class NDVIValuesSeries :
             if (stats[2]!=0):
                 self.dates.append(int(os.path.basename(nf)[:8]))
                 self.ndvivalues.append(stats[2]-101)
-            
+    
+    def save_values_to_csv (self, csv_file, year):
+        with open(csv_file,'w', newline='') as file:
+            writer = csv.DictWriter(file,fieldnames=['date','ndvi'])
+            writer.writeheader()
+            ndvi_series_data = list(zip(self.dates, self.ndvivalues))
+            for date,ndvi in ndvi_series_data:
+                if (int(date/10000) == year):
+                    writer.writerow({'date': date,
+                                    'ndvi': format(float(ndvi)/100,'.2g')})
+            file.close()
+        return True
+
     def plot_values (self, outfile, year):
+        min_date = 10000*year + 320
+        max_date = 10000*year + 1101
         dates_filt = list()
         values_filt = list()
-        dates_filt.append(10000*year + 301)
+        dates_filt.append(min_date)
         values_filt.append(0.0)
         for i in range(0,len(self.dates)) :
-            if (self.dates[i]>10000*year + 101) and (self.dates[i]< 10000*year + 1130):
+            if (self.dates[i]>min_date) and (self.dates[i]< max_date):
                 dates_filt.append(self.dates[i])
                 values_filt.append(self.ndvivalues[i])
-        dates_filt.append(10000*year + 1130)
+        dates_filt.append(max_date)
         values_filt.append(0.0)
         plt.plot(dates_filt,values_filt)
+        #plt.figure(figsize=(20,10))
+        
         plt.xticks(dates_filt, rotation='vertical',fontsize=8)
         
+    
         plt.xlabel('DOY', fontsize=18)
         plt.ylabel('100*NDVI', fontsize=18)
-        plt.savefig(outfile,dpi=150)
+        fig = plt.gcf()
+        fig.set_size_inches(18.5, 10.5)
+        fig.savefig(outfile, dpi=100)
+        #plt.savefig(outfile,dpi=150)
         plt.close('all')
 
     def get_values (self,year):
@@ -78,60 +100,7 @@ class NDVIFilesSeries :
     def get_files (self):
         return self.ndvi_files_list
 
-    @staticmethod
-    def create_shp (wkt_geom, shp_file):
-        driver_name = "ESRI Shapefile"      # e.g.: GeoJSON, ESRI Shapefile
-        driver = ogr.GetDriverByName(driver_name)
-        if os.path.exists(shp_file):
-            driver.DeleteDataSource(shp_file)
-        outDataSource = driver.CreateDataSource(shp_file)
-        webmerc_srs = osr.SpatialReference()
-        webmerc_srs.ImportFromEPSG(3857)
-        outlayer = outDataSource.CreateLayer('field', webmerc_srs, geom_type=ogr.wkbMultiPolygon)
 
-        id_field = ogr.FieldDefn("id", ogr.OFTInteger)
-        outlayer.CreateField(id_field)
-        
-        feature = ogr.Feature(outlayer.GetLayerDefn())
-        feature.SetGeometry(ogr.CreateGeometryFromWkt(wkt_geom))
-        feature.SetField("id", 1)
-
-        outlayer.CreateFeature(feature)
-        feature = None
-        outDataSource = None
-
-
-
-    def process_field (self, geom, name, output_folder):
-
-        print()
-
-
-def get_vector_fields (vector_file):
-  
-   
-    ds = gdal.OpenEx(vector_file, gdal.OF_VECTOR )
-    if ds is None:
-        print ("Open failed: " + vector_file)
-        sys.exit( 1 )
-
-    lyr = ds.GetLayer(0)
-    lyr.ResetReading()
-
-    #source_srs = lyr.GetSpatialRef()
-
-    webmerc_srs = osr.SpatialReference()
-    webmerc_srs.ImportFromEPSG(3857)
-
-    coordTrans = osr.CoordinateTransformation(lyr.GetSpatialRef(), 
-                                                webmerc_srs)
-  
-    output = list()
-    for feat in lyr:
-        geom = feat.GetGeometryRef()
-        geom.Transform(coordTrans)
-        output.append((feat.GetField("fid"),geom.ExportToWkt()))
-    return output
 
 
 ################################################################################################
@@ -167,11 +136,13 @@ print('---------------Stage I ----------------')
 print('Warping NDVI files..') 
 
 ndvi_files = NDVIFilesSeries(input_folder).get_files()
-fields_data = get_vector_fields(fields_vector_file)
+fields_data = vop.vector_file.get_all_geometry(fields_vector_file)
 
 if not os.path.exists(output_folder):
     os.mkdir(output_folder)
 
+srs_4326= osr.SpatialReference()
+srs_4326.ImportFromEPSG(4326)
 
 
 for fd in fields_data:
@@ -179,7 +150,8 @@ for fd in fields_data:
     if not os.path.exists(field_folder) :
         os.mkdir(field_folder)
     shp_file = os.path.join(field_folder,'field_border.shp')
-    NDVIFilesSeries.create_shp(fd[1],shp_file)
+    #NDVIFilesSeries.create_shp(fd[1],shp_file)
+    vop.vector_file.create_vector_file(fd[1],shp_file,srs_4326)
     for nf in ndvi_files :
         year = os.path.basename(nf)[0:4]
         cropped_tif = os.path.join(os.path.join(field_folder,year),
@@ -203,8 +175,9 @@ for fd in fields_data:
     print ('fid = ' + str(fd[0]))
     folder = os.path.join(output_folder,str(fd[0]))
     ndvi_series = NDVIValuesSeries(folder)
-    for year in range(2014,2020):
+    for year in range(2016,2020):
         ndvi_series.plot_values(os.path.join(folder,str(year)+"_ndvi.png"),year)
+        ndvi_series.save_values_to_csv(os.path.join(folder,str(year)+'_ndvi.csv'),year)
 
 
 

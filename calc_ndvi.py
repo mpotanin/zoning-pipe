@@ -5,7 +5,7 @@ import re
 import numpy as np
 import time
 import argparse
-import raster_proc
+from common_utils import raster_proc
 
 
 
