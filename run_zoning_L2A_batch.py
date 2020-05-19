@@ -181,6 +181,7 @@ for geom in vector_objects:
         sid_param = sid_param[:-1]
         cmd_zoning = (zoning_path + ' -filt 10 -m quantiles -v ' + tmp_geojson + 
                         ' -sid ' + sid_param + ' -o_tif ' + tmp_geojson.replace('.geojson','.tif'))
+        print(cmd_zoning)	
         os.system(cmd_zoning)
 
 
