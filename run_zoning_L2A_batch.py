@@ -134,6 +134,9 @@ for geom in vector_objects:
                 tmp_vrt_file = rp.generate_virtual_random_tif_path()
                 
                 #tmp_vrt_file = 'C:/work/python/zoning-pipe/rt/zones/with_zeros.tif'
+
+                #TODO1: extract BBOX from input raster and check if it intersects with field vector
+
                 
                 if not rp.crop_raster_file_to_cutline(B4_file,tmp_vrt_file,tmp_geojson,None,0):
                     warp_error = True
@@ -175,6 +178,7 @@ for geom in vector_objects:
 
     print ('VALID: ' + str(count))
     if (count > 0):
+    #TODO1: exclude redundant NDVI files by date
         sid_param = str()
         for nf in NDVI_valid_files:
             sid_param+=nf + ','

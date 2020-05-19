@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Текущий файл",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args":["-i",
+                    "D:\\data\\L2\\39UVB",
+                    "-o",
+                    "C:\\work\\data\\zoning\\rt\\zones\\pestr",
+                    "-v",
+                    //"C:\\work\\data\\tatarstan\\Pilot\\Блок 1\\1. Эталонная схема полей\\Etalonnaya_shema_18_PESTR.shp",
+                    "C:/work/data/zoning/rt/Sxema_polei_RT/Sxema_polei_RT/Etalonnaya_shema_18_PESTR.shp",
+                    //"C:\\work\\python\\zoning-pipe\\rt\\field2.geojson",
+                    "-z",
+                    "C:\\work\\cpp\\agri-zoning\\x64\\Release\\zoning",
+                    "-sd","0501",
+                    "-ed","0715"
+                    ]
+        }
+    ]
+}
