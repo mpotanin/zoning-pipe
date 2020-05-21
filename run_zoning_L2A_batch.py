@@ -109,6 +109,8 @@ res = srs_4326.ImportFromEPSG(4326)
 
 vector_objects = vop.vector_file.get_all_geometry_in_wkt(input_vector,srs_4326)
 
+ndvi_files_geo_index = dict()
+
 for geom in vector_objects:
     tmp_geojson = os.path.join(output_folder,str(geom[0])+'.geojson')
     vop.vector_file.create_vector_file(geom[1],tmp_geojson,srs_4326)
@@ -122,11 +124,7 @@ for geom in vector_objects:
             if f.endswith('_NDVI.tif'):
                 day = (int(f[11:19]) % 10000)
                 if ((day<start_day) or (day>end_day)): break
-                #filter band 4: all pixels > 0
-                #filter cloud mask: all pixels = 0 or 131
-                #filter NDVI: mean value > min_ndvi
-                #wapr NDVI, save geojson
-                #zoning
+          
                 ndvi_file = os.path.join(dirpath,f)
                 cloud_mask = os.path.join(dirpath,'MASKS/' + f.replace('_SRE_NDVI.tif','_CLM_R1.tif' ))
                 B4_file = ndvi_file.replace('_NDVI.tif','_B4.tif')
@@ -136,6 +134,14 @@ for geom in vector_objects:
                 #tmp_vrt_file = 'C:/work/python/zoning-pipe/rt/zones/with_zeros.tif'
 
                 #TODO1: extract BBOX from input raster and check if it intersects with field vector
+                raster_geom = 0
+                if ndvi_file in ndvi_files_geo_index:
+                    raster_geom = ndvi_files_geo_index[ndvi_file]
+                else:
+                    raster_geom = rp.get_raster_bbox(ndvi_file,srs_4326).create_ogrpolygon()
+                    ndvi_files_geo_index[ndvi_file] = raster_geom
+                if not raster_geom.Intersects(ogr.CreateGeometryFromWkt(geom[1])):
+                    break
 
                 
                 if not rp.crop_raster_file_to_cutline(B4_file,tmp_vrt_file,tmp_geojson,None,0):
@@ -186,7 +192,8 @@ for geom in vector_objects:
     #TODO1: exclude redundant NDVI files by date
         sid_param = str()
         for nf in NDVI_valid_files:
-            sid_param+=nf + ','
+            if sid_param.find(os.path.basename(nf)[11:19]) == -1 :
+                sid_param+=nf + ','
         sid_param = sid_param[:-1]
         cmd_zoning = (zoning_path + ' -filt 10 -m quantiles -v ' + tmp_geojson + 
                         ' -sid ' + sid_param + ' -o_tif ' + tmp_geojson.replace('.geojson','.tif'))
