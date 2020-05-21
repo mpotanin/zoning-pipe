@@ -147,6 +147,9 @@ for geom in vector_objects:
                 B4_band= B4_ds.GetRasterBand(1)
                 B4_array = B4_band.ReadAsArray()
                 B4_ds = None
+                gdal.Unlink(tmp_vrt_file)
+                gdal.Unlink(tmp_vrt_file_units )
+                
                 if not np.all((B4_array>0)): break
                 #else: print('B4: ' + f)
                 
@@ -157,6 +160,7 @@ for geom in vector_objects:
                 mask_band= mask_ds.GetRasterBand(1)
                 mask_array = mask_band.ReadAsArray()
                 mask_ds = None
+                gdal.Unlink(tmp_vrt_file)
                 if not np.all((mask_array == 0)): break
                 #else: print('MASK: ' + f)
 
@@ -167,6 +171,7 @@ for geom in vector_objects:
                 ndvi_band = ndvi_ds.GetRasterBand(1)
                 ndvi_stats = ndvi_band.GetStatistics( True, True )
                 ndvi_ds = None
+                gdal.Unlink(tmp_vrt_file)
                 if (ndvi_stats[2]<min_ndvi*100 + 101): break
                 #else: print ('NDVI: ' + f)
                 count+=1
@@ -176,7 +181,7 @@ for geom in vector_objects:
             print ('WARP_ERROR')
             break
 
-    print ('VALID: ' + str(count))
+    #print ('VALID: ' + str(count))
     if (count > 0):
     #TODO1: exclude redundant NDVI files by date
         sid_param = str()
@@ -185,7 +190,7 @@ for geom in vector_objects:
         sid_param = sid_param[:-1]
         cmd_zoning = (zoning_path + ' -filt 10 -m quantiles -v ' + tmp_geojson + 
                         ' -sid ' + sid_param + ' -o_tif ' + tmp_geojson.replace('.geojson','.tif'))
-        print(cmd_zoning)	
+        #print(cmd_zoning)	
         os.system(cmd_zoning)
 
 
